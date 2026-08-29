@@ -159,6 +159,10 @@ data "aws_iam_policy_document" "github_actions_inline" {
       "tag:TagResources",
       "tag:UntagResources",
       "sts:GetCallerIdentity",
+      # The ingestion pipeline: the Kinesis stream and the dead letter
+      # queue behind the event source mapping.
+      "kinesis:*",
+      "sqs:*",
     ]
 
     resources = ["*"]
