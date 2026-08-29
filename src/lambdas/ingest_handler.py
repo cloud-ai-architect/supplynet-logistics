@@ -29,12 +29,12 @@ EVENTS_TABLE = os.environ.get("ORDERS_TABLE", "")
 ESCALATE_AT = {"critical", "high"}
 
 
-def _is_kinesis(event: dict) -> bool:
+def _is_kinesis(event: dict[str, Any]) -> bool:
     records = event.get("Records") or []
     return bool(records) and records[0].get("eventSource") == "aws:kinesis"
 
 
-def _decode(record: dict) -> Any:
+def _decode(record: dict[str, Any]) -> Any:
     raw = base64.b64decode(record["kinesis"]["data"]).decode("utf-8")
     try:
         return json.loads(raw)
@@ -52,9 +52,7 @@ def _process_one(payload: Any) -> dict[str, Any]:
         assessment = DisruptionAgent().run(fact)
 
     escalate = bool(
-        assessment
-        and assessment.get("is_disruption")
-        and assessment.get("severity") in ESCALATE_AT
+        assessment and assessment.get("is_disruption") and assessment.get("severity") in ESCALATE_AT
     )
 
     return {"fact": fact, "assessment": assessment, "escalate": escalate}
@@ -73,9 +71,9 @@ def _persist(result: dict[str, Any]) -> None:
     # rather than overwriting the shipment's most recent record.
     import datetime
 
-    event_ts = fact.get("timestamp") or datetime.datetime.now(
-        datetime.timezone.utc
-    ).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    event_ts = fact.get("timestamp") or datetime.datetime.now(datetime.UTC).strftime(
+        "%Y-%m-%dT%H:%M:%S.%fZ"
+    )
 
     item = {
         "order_id": {"S": str(shipment)},
@@ -84,12 +82,10 @@ def _persist(result: dict[str, Any]) -> None:
         "escalated": {"BOOL": bool(result.get("escalate"))},
         "payload": {"S": json.dumps(result)[:38000]},
     }
-    boto3.client("dynamodb", region_name=REGION).put_item(
-        TableName=EVENTS_TABLE, Item=item
-    )
+    boto3.client("dynamodb", region_name=REGION).put_item(TableName=EVENTS_TABLE, Item=item)
 
 
-def handler(event: dict, context: object) -> dict:
+def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     if _is_kinesis(event):
         # Per-record failure reporting: Kinesis retries only the records that
         # actually failed rather than the whole batch.
@@ -105,11 +101,15 @@ def handler(event: dict, context: object) -> dict:
             except Exception:  # noqa: BLE001 - one bad record must not stall the shard
                 failures.append({"itemIdentifier": record["kinesis"]["sequenceNumber"]})
 
-        print(json.dumps({
-            "processed": len(event.get("Records", [])),
-            "escalated": escalated,
-            "failed": len(failures),
-        }))
+        print(
+            json.dumps(
+                {
+                    "processed": len(event.get("Records", [])),
+                    "escalated": escalated,
+                    "failed": len(failures),
+                }
+            )
+        )
         return {"batchItemFailures": failures}
 
     return run_stage(

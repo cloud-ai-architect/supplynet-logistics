@@ -57,7 +57,7 @@ class IngestAgent(BaseAgent):
         import json
 
         payload = event if isinstance(event, str) else json.dumps(event, indent=1)
-        result = self.invoke_json("Raw event:\n%s" % payload)
+        result = self.invoke_json(f"Raw event:\n{payload}")
         result["disclaimer"] = DISCLAIMER
         return result
 
@@ -87,9 +87,9 @@ class DisruptionAgent(BaseAgent):
     def handle(self, event: dict[str, Any], context: str = "") -> dict[str, Any]:
         import json
 
-        prompt = "Event:\n%s" % json.dumps(event, indent=1)
+        prompt = f"Event:\n{json.dumps(event, indent=1)}"
         if context:
-            prompt += "\n\nContext:\n%s" % context
+            prompt += f"\n\nContext:\n{context}"
         result = self.invoke_json(prompt)
         result["disclaimer"] = DISCLAIMER
         return result
@@ -124,11 +124,11 @@ class RerouteAgent(BaseAgent):
     ) -> dict[str, Any]:
         import json
 
-        parts = ["Shipment:\n%s" % json.dumps(shipment, indent=1)]
+        parts = [f"Shipment:\n{json.dumps(shipment, indent=1)}"]
         if disruption:
-            parts.append("Disruption:\n%s" % json.dumps(disruption, indent=1))
+            parts.append(f"Disruption:\n{json.dumps(disruption, indent=1)}")
         parts.append(
-            "Available options:\n%s" % json.dumps(options or [], indent=1)
+            f"Available options:\n{json.dumps(options or [], indent=1)}"
             if options
             else "Available options: none supplied"
         )
@@ -165,10 +165,9 @@ class NotifyAgent(BaseAgent):
     ) -> dict[str, Any]:
         import json
 
-        parts = ["Audience: %s" % audience,
-                 "Disruption:\n%s" % json.dumps(disruption, indent=1)]
+        parts = [f"Audience: {audience}", f"Disruption:\n{json.dumps(disruption, indent=1)}"]
         if reroute:
-            parts.append("Reroute analysis:\n%s" % json.dumps(reroute, indent=1))
+            parts.append(f"Reroute analysis:\n{json.dumps(reroute, indent=1)}")
         result = self.invoke_json("\n\n".join(parts), max_tokens=2500)
         result["disclaimer"] = DISCLAIMER
         return result
@@ -193,7 +192,7 @@ class OrchestratorAgent(BaseAgent):
     VALID = {"ingest", "disruption", "reroute", "notify"}
 
     def handle(self, request: str) -> dict[str, Any]:
-        result = self.invoke_json("Request:\n%s" % request)
+        result = self.invoke_json(f"Request:\n{request}")
         if result.get("agent") not in self.VALID:
             # Ingest is the safe default: it is the only agent that accepts a
             # raw event without prior analysis.
@@ -212,5 +211,11 @@ AGENTS: dict[str, type[BaseAgent]] = {
     "orchestrator": OrchestratorAgent,
 }
 
-__all__ = ["AGENTS", "DisruptionAgent", "IngestAgent", "NotifyAgent",
-           "OrchestratorAgent", "RerouteAgent"]
+__all__ = [
+    "AGENTS",
+    "DisruptionAgent",
+    "IngestAgent",
+    "NotifyAgent",
+    "OrchestratorAgent",
+    "RerouteAgent",
+]
