@@ -15,10 +15,22 @@ resource "aws_dynamodb_table" "this" {
   name         = var.table_name
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "order_id"
-  tags         = var.common_tags
+
+  # Composite key. This table stores a stream of events per shipment, not one
+  # row per shipment: keying on order_id alone meant each new event silently
+  # overwrote the previous one, so a shipment's history collapsed to whatever
+  # arrived last. The sort key preserves the sequence and makes "all events
+  # for this shipment, in order" a single query.
+  range_key = "event_ts"
+
+  tags = var.common_tags
 
   attribute {
     name = "order_id"
+    type = "S"
+  }
+  attribute {
+    name = "event_ts"
     type = "S"
   }
   attribute {
