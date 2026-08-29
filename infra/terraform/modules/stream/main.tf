@@ -77,7 +77,7 @@ resource "aws_lambda_event_source_mapping" "events" {
 
   # A record that cannot be processed is dropped after a bounded number of
   # attempts and reported, rather than stalling the shard behind it.
-  maximum_retry_attempts     = 3
+  maximum_retry_attempts         = 3
   bisect_batch_on_function_error = true
 
   destination_config {
@@ -90,6 +90,6 @@ resource "aws_lambda_event_source_mapping" "events" {
 }
 
 output "stream_name" { value = aws_kinesis_stream.events.name }
-output "stream_arn"  { value = aws_kinesis_stream.events.arn }
-output "dlq_url"     { value = aws_sqs_queue.dlq.url }
-output "dlq_arn"     { value = aws_sqs_queue.dlq.arn }
+output "stream_arn" { value = aws_kinesis_stream.events.arn }
+output "dlq_url" { value = aws_sqs_queue.dlq.url }
+output "dlq_arn" { value = aws_sqs_queue.dlq.arn }
