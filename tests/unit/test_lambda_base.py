@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from src.common import BaseAgent, SupplyNetError, ModelError
+from src.common import BaseAgent, ModelError, SupplyNetError
 from src.lambdas._base import parse_event, respond, run_stage
 
 
